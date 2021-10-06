@@ -1,0 +1,81 @@
+provider "aws" {
+access_key = "AKIATQRJWT2Q3KH3AIXT"
+secret_key = "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"
+region = "eu-central-1"
+}
+
+resource "aws_instance" "MyWebServer" {
+  ami = "ami-07df274a488ca9195"
+  instance_type = "t2.micro"
+  vpc_security_group_ids = [aws_security_group.MyWebServer.id]
+  user_data = <<EOF
+#!/bin/bash
+yum -y update
+uym -y install httpd
+myip='curl http://169.254.169.254/latest/meta-data/local-ipv4'
+echo "<h2>WebServer with IP: $myip</h2><br>Build by Terrraform!" > /var/www/html/index.html
+sudo service httpd start
+chkconfig httpd on
+EOF
+}
+
+resource "aws_security_group" "MyWebServer" {
+  name        = "MyWebServer Security Group"
+  description = "My First Security Group"
+
+ingress = [
+    {
+      description      = "HTTP"
+      from_port        = 80
+      to_port          = 80
+      protocol         = "tcp"
+      cidr_blocks      = ["0.0.0.0/0"]  
+      ipv6_cidr_blocks = []
+      prefix_list_ids = []
+      security_groups = []
+      self = false
+    },
+  {
+      description      = "HTTPS"
+      from_port        = 443
+      to_port          = 443
+      protocol         = "tcp"
+      cidr_blocks      = ["0.0.0.0/0"]  
+      ipv6_cidr_blocks = []
+      prefix_list_ids = []
+      security_groups = []
+      self = false      
+  },
+
+    {
+      description      = "SSH"
+      from_port        = 22
+      to_port          = 22
+      protocol         = "tcp"
+      cidr_blocks      = ["0.0.0.0/0"]  
+      ipv6_cidr_blocks = []
+      prefix_list_ids = []
+      security_groups = []
+      self = false      
+    }
+  ]
+
+
+  egress = [
+    {
+      description      = "for all outgoing traffics"
+      from_port        = 0
+      to_port          = 0
+      protocol         = "-1"
+      cidr_blocks      = ["0.0.0.0/0"]
+      ipv6_cidr_blocks = ["::/0"]
+      prefix_list_ids = []
+      security_groups = []
+      self = false
+    }
+  ]
+
+  tags = {
+    Name = "sg-for-subnet"
+  }
+}
